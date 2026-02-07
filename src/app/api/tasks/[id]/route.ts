@@ -50,7 +50,33 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
 
         await taskRef.update(updates);
 
-        // TODO: Update Google Calendar here
+        // Sync Update to Google Calendar
+        const currentData = taskSnap.data();
+        if (currentData?.calendarEventId) {
+            try {
+                // We need to fetch the calendar sync helper
+                // This dynamic import avoids circular deps usually, but here just keeps cold start fast
+                const { getGoogleCalendarClient } = await import('@/lib/google-calendar');
+                const calendar = await getGoogleCalendarClient(uid);
+
+                if (calendar) {
+                    // Construct patch body
+                    const patchBody: any = {};
+                    if (updates.title) patchBody.summary = `[${(updates.category || currentData.category).toUpperCase()}] ${updates.title}`;
+                    if (updates.description !== undefined) patchBody.description = updates.description;
+                    if (updates.scheduledStart) patchBody.start = { dateTime: updates.scheduledStart.toDate().toISOString() };
+                    if (updates.scheduledEnd) patchBody.end = { dateTime: updates.scheduledEnd.toDate().toISOString() };
+
+                    await calendar.events.patch({
+                        calendarId: 'primary',
+                        eventId: currentData.calendarEventId,
+                        requestBody: patchBody
+                    });
+                }
+            } catch (e) {
+                console.error("Calendar Update Sync Failed", e);
+            }
+        }
 
         return NextResponse.json({ status: 'success', updatedFields: updates });
     } catch (error) {
@@ -78,9 +104,25 @@ export async function DELETE(req: NextRequest, props: { params: Promise<{ id: st
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
+        const taskData = taskSnap.data();
+
         await taskRef.delete();
 
-        // TODO: Delete form Google Calendar here
+        // Sync Delete to Google Calendar
+        if (taskData?.calendarEventId) {
+            try {
+                const { getGoogleCalendarClient } = await import('@/lib/google-calendar');
+                const calendar = await getGoogleCalendarClient(uid);
+                if (calendar) {
+                    await calendar.events.delete({
+                        calendarId: 'primary',
+                        eventId: taskData.calendarEventId
+                    });
+                }
+            } catch (e) {
+                console.error("Calendar Delete Sync Failed", e);
+            }
+        }
 
         return NextResponse.json({ status: 'success' });
     } catch (error) {

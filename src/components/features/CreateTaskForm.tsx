@@ -21,18 +21,21 @@ export function CreateTaskForm({ onCreate }: CreateTaskFormProps) {
         e.preventDefault();
         setLoading(true);
 
-        // Quick and dirty local time wrapper
-        const now = new Date();
-        const end = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour default
 
         try {
+            if (!formData.scheduledStart || !formData.scheduledEnd) {
+                alert("Time is an illusion, but deadlines are real. Set them.");
+                setLoading(false);
+                return;
+            }
+
             await onCreate({
                 title: formData.title!,
                 description: formData.description || "",
                 category: formData.category as any,
                 difficulty: formData.difficulty as any,
-                scheduledStart: now.toISOString(),
-                scheduledEnd: end.toISOString()
+                scheduledStart: formData.scheduledStart!,
+                scheduledEnd: formData.scheduledEnd!
             });
             setIsOpen(false);
             setFormData({ difficulty: "medium", category: "work", title: "" }); // Reset
@@ -59,6 +62,31 @@ export function CreateTaskForm({ onCreate }: CreateTaskFormProps) {
                 required
                 autoFocus
             />
+
+            <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                    <label className="text-xs text-neutral-500 font-mono">START</label>
+                    <Input
+                        type="datetime-local"
+                        value={formData.scheduledStart}
+                        required
+                        onChange={e => {
+                            setFormData({ ...formData, scheduledStart: e.target.value });
+                        }}
+                    />
+                </div>
+                <div className="space-y-1">
+                    <label className="text-xs text-neutral-500 font-mono">END</label>
+                    <Input
+                        type="datetime-local"
+                        value={formData.scheduledEnd}
+                        required
+                        onChange={e => {
+                            setFormData({ ...formData, scheduledEnd: e.target.value });
+                        }}
+                    />
+                </div>
+            </div>
 
             <div className="flex gap-2">
                 <Select
