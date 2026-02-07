@@ -15,7 +15,8 @@ export async function POST(req: NextRequest) {
         const adminAuth = getAuth(getAdminApp());
         const decodedToken = await adminAuth.verifyIdToken(idToken);
         const uid = decodedToken.uid;
-        const { accessToken } = await req.json();
+
+        const { accessToken, refreshToken } = await req.json();
 
         // 1. Check if user exists
         const userRef = adminDb.collection('users').doc(uid);
@@ -43,12 +44,8 @@ export async function POST(req: NextRequest) {
             await userRef.set(newUser);
         }
 
+
         // 3. Store Google Access Token securely
-        // We store this in a separate sub-collection or root collection restricted by security rules
-
-        // Here we use a root collection 'user_secrets' that client SDKs cannot access normally
-        const { accessToken, refreshToken } = await req.json();
-
         if (accessToken) {
             const secretUpdate: any = {
                 googleAccessToken: accessToken,
