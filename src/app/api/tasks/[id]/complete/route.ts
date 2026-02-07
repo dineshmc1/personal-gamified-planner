@@ -5,7 +5,9 @@ import { calculateTaskXP, getUpdatedStats, calculateLevel, calculateXpForNextLev
 import { Task, UserProfile } from '@/types';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const idToken = authHeader.split('Bearer ')[1];
@@ -34,12 +36,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
                 if (taskData.userId !== uid) throw new Error("Forbidden");
                 if (taskData.status === 'completed') throw new Error("Task already completed");
 
+
                 // 2. Calculate Rewards
-                const xpGained = calculateTaskXP(taskData, userData.mode);
+                const xpGained = calculateTaskXP(taskData, userData.mode || 'beast');
                 const newStats = getUpdatedStats(userData.stats, taskData.category);
-                let newXp = userData.currentXp + xpGained;
-                let newLevel = userData.level;
-                let nextLevelXp = userData.nextLevelXp;
+                let newXp = (userData.currentXp || 0) + xpGained;
+                let newLevel = userData.level || 1;
+                let nextLevelXp = userData.nextLevelXp || 100;
 
                 // Level Up Logic
                 if (newXp >= nextLevelXp) {
@@ -68,8 +71,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
             return NextResponse.json({ status: 'success', rewards: result });
 
+
         } catch (e: any) {
-            return NextResponse.json({ error: e.message }, { status: 400 });
+            console.error("Transaction Error:", e);
+            return NextResponse.json({ error: e.message, stack: e.stack }, { status: 400 });
         }
 
     } catch (error) {

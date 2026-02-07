@@ -33,10 +33,17 @@ export function calculateXpForNextLevel(level: number): number {
 }
 
 export function getUpdatedStats(
-    currentStats: UserProfile['stats'],
+
+    currentStats: UserProfile['stats'] | undefined,
     category: Task['category']
 ): UserProfile['stats'] {
-    const newStats = { ...currentStats };
+    const newStats = {
+        intelligence: 0,
+        strength: 0,
+        discipline: 0,
+        balance: 0,
+        ...currentStats
+    };
     const amount = 1; // Base stat gain per task
 
     switch (category) {

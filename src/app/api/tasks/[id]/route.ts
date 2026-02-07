@@ -17,7 +17,8 @@ async function getAuthenticatedUid(req: NextRequest) {
     }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const uid = await getAuthenticatedUid(req);
     if (!uid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -58,7 +59,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const uid = await getAuthenticatedUid(req);
     if (!uid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

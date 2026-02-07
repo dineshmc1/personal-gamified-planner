@@ -46,7 +46,36 @@ export async function POST(req: NextRequest) {
 
         const docRef = await adminDb.collection('tasks').add(newTask);
 
-        // TODO: Trigger Google Calendar Sync here
+        // Sync to Google Calendar
+        try {
+            const { getGoogleCalendarClient } = await import('@/lib/google-calendar');
+            const calendar = await getGoogleCalendarClient(uid);
+
+            if (calendar) {
+                const event = await calendar.events.insert({
+                    calendarId: 'primary',
+                    requestBody: {
+                        summary: `[${newTask.category.toUpperCase()}] ${newTask.title}`,
+                        description: newTask.description,
+                        start: { dateTime: newTask.scheduledStart.toDate().toISOString() },
+                        end: { dateTime: newTask.scheduledEnd.toDate().toISOString() },
+                        extendedProperties: {
+                            private: {
+                                app: 'gamified-planner',
+                                taskId: docRef.id
+                            }
+                        }
+                    }
+                });
+
+                if (event.data.id) {
+                    await docRef.update({ calendarEventId: event.data.id });
+                }
+            }
+        } catch (calendarError) {
+            console.error("Calendar Sync Failed:", calendarError);
+            // We do NOT fail the request, just log it. Task is still created.
+        }
 
         return NextResponse.json({ status: 'success', taskId: docRef.id, task: newTask });
 
