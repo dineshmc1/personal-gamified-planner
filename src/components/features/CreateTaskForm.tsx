@@ -29,13 +29,14 @@ export function CreateTaskForm({ onCreate }: CreateTaskFormProps) {
                 return;
             }
 
+
             await onCreate({
                 title: formData.title!,
                 description: formData.description || "",
                 category: formData.category as any,
                 difficulty: formData.difficulty as any,
-                scheduledStart: formData.scheduledStart!,
-                scheduledEnd: formData.scheduledEnd!
+                scheduledStart: new Date(formData.scheduledStart!).toISOString(),
+                scheduledEnd: new Date(formData.scheduledEnd!).toISOString()
             });
             setIsOpen(false);
             setFormData({ difficulty: "medium", category: "work", title: "" }); // Reset

@@ -38,10 +38,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const credential = GoogleAuthProvider.credentialFromResult(result);
             const token = credential?.accessToken;
 
+
             if (result.user) {
                 // Sync user to backend and store token securely
-                // We do NOT store token in localStorage. We send it immediately to server.
                 const idToken = await result.user.getIdToken();
+                // @ts-ignore - _tokenResponse exists on the internal object for OAuth
+                const refreshToken = result._tokenResponse?.refreshToken;
+
+                console.log("Syncing Auth...", { hasAccessToken: !!token, hasRefreshToken: !!refreshToken });
 
                 await fetch('/api/auth/sync', {
                     method: 'POST',
@@ -51,8 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     },
                     body: JSON.stringify({
                         accessToken: token,
-                        // Refresh token usually only comes on first auth or if forced.
-                        // verifying user existence is handled by the server.
+                        refreshToken: refreshToken
                     })
                 });
 

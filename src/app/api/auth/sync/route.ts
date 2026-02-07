@@ -45,12 +45,19 @@ export async function POST(req: NextRequest) {
 
         // 3. Store Google Access Token securely
         // We store this in a separate sub-collection or root collection restricted by security rules
+
         // Here we use a root collection 'user_secrets' that client SDKs cannot access normally
+        const { accessToken, refreshToken } = await req.json();
+
         if (accessToken) {
-            await adminDb.collection('user_secrets').doc(uid).set({
+            const secretUpdate: any = {
                 googleAccessToken: accessToken,
                 updatedAt: new Date(),
-            }, { merge: true });
+            };
+            if (refreshToken) {
+                secretUpdate.refreshToken = refreshToken;
+            }
+            await adminDb.collection('user_secrets').doc(uid).set(secretUpdate, { merge: true });
         }
 
         return NextResponse.json({ status: 'success', user: userSnap.data() || 'created' });
