@@ -66,9 +66,11 @@ export function CreateTaskForm({ onCreate }: CreateTaskFormProps) {
             <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                     <label className="text-xs text-neutral-500 font-mono">START</label>
+
+                    <label className="text-xs text-neutral-500 font-mono">START</label>
                     <Input
                         type="datetime-local"
-                        value={formData.scheduledStart}
+                        value={formData.scheduledStart || ""}
                         required
                         onChange={e => {
                             setFormData({ ...formData, scheduledStart: e.target.value });
@@ -79,7 +81,7 @@ export function CreateTaskForm({ onCreate }: CreateTaskFormProps) {
                     <label className="text-xs text-neutral-500 font-mono">END</label>
                     <Input
                         type="datetime-local"
-                        value={formData.scheduledEnd}
+                        value={formData.scheduledEnd || ""}
                         required
                         onChange={e => {
                             setFormData({ ...formData, scheduledEnd: e.target.value });
