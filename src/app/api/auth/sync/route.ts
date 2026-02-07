@@ -3,6 +3,9 @@ import { adminDb, getAdminApp } from '@/lib/firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
 import { UserProfile } from '@/types';
 
+// Force dynamic to ensure no caching issues
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
@@ -16,7 +19,11 @@ export async function POST(req: NextRequest) {
         const decodedToken = await adminAuth.verifyIdToken(idToken);
         const uid = decodedToken.uid;
 
-        const { accessToken, refreshToken } = await req.json();
+
+        const body = await req.json();
+        const { accessToken, refreshToken } = body;
+
+        console.log(`[AuthSync] Syncing user ${uid}. AccessToken: ${!!accessToken}, RefreshToken: ${!!refreshToken}`);
 
         // 1. Check if user exists
         const userRef = adminDb.collection('users').doc(uid);
@@ -43,7 +50,6 @@ export async function POST(req: NextRequest) {
 
             await userRef.set(newUser);
         }
-
 
         // 3. Store Google Access Token securely
         if (accessToken) {

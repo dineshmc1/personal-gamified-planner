@@ -42,8 +42,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (result.user) {
                 // Sync user to backend and store token securely
                 const idToken = await result.user.getIdToken();
-                // @ts-ignore - _tokenResponse exists on the internal object for OAuth
-                const refreshToken = result._tokenResponse?.refreshToken;
+                // @ts-ignore
+                const response = result._tokenResponse;
+                console.log("Token Response Keys:", Object.keys(response || {}));
+                console.log("OAuth Refresh Token Present:", !!response?.oauthRefreshToken);
+
+                const refreshToken = response?.oauthRefreshToken || response?.refreshToken;
 
                 console.log("Syncing Auth...", { hasAccessToken: !!token, hasRefreshToken: !!refreshToken });
 
